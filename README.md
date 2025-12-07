@@ -42,7 +42,7 @@ Sinta-se à vontade para fazer um fork, melhorar o código e enviar um Pull Requ
 
 ## 📄 Licença
 
-Este projeto é distribuído sob a licença **MIT License**.
+Este projeto é um software livre e independente, distribuído sob a licença **GNU GPL**.
 
 ## ☕ Apoie o Projeto
 
