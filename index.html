@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Papel Higiênico</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        function App() {
+            // Estados para o formulário
+            const [apelido, setApelido] = useState('');
+            const [unidades, setUnidades] = useState('');
+            const [metros, setMetros] = useState('');
+            const [preco, setPreco] = useState('');
+
+            // Estado para a lista de itens e ordenação
+            const [itens, setItens] = useState([]);
+            const [ordemCrescente, setOrdemCrescente] = useState(true);
+
+            // Formata moeda para BRL
+            const formatarMoeda = (valor) => {
+                return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+            };
+
+            // Adicionar item à lista
+            const adicionarItem = (e) => {
+                e.preventDefault();
+                if (!unidades || !metros || !preco) return;
+
+                const totalMetros = parseFloat(unidades) * parseFloat(metros);
+                const precoPorMetro = parseFloat(preco) / totalMetros;
+
+                const novoItem = {
+                    id: Date.now(),
+                    apelido: apelido || `Pacote ${itens.length + 1}`,
+                    unidades: parseFloat(unidades),
+                    metros: parseFloat(metros),
+                    precoTotal: parseFloat(preco),
+                    precoPorMetro: precoPorMetro
+                };
+
+                setItens([...itens, novoItem]);
+                
+                // Limpar campos
+                setApelido('');
+                setUnidades('');
+                setMetros('');
+                setPreco('');
+            };
+
+            // Remover item
+            const removerItem = (id) => {
+                setItens(itens.filter(item => item.id !== id));
+            };
+
+            // Lógica de Ordenação
+            const itensOrdenados = useMemo(() => {
+                return [...itens].sort((a, b) => {
+                    if (ordemCrescente) {
+                        return a.precoPorMetro - b.precoPorMetro;
+                    } else {
+                        return b.precoPorMetro - a.precoPorMetro;
+                    }
+                });
+            }, [itens, ordemCrescente]);
+
+            // Encontrar o menor preço para destacar
+            const menorPrecoId = useMemo(() => {
+                if (itens.length === 0) return null;
+                const menor = [...itens].sort((a, b) => a.precoPorMetro - b.precoPorMetro)[0];
+                return menor.id;
+            }, [itens]);
+
+            return (
+                <div className="min-h-screen pb-24 font-sans">
+                    {/* Header */}
+                    <header className="bg-indigo-600 text-white p-4 shadow-md">
+                        <div className="max-w-xl mx-auto text-center">
+                            <h1 className="text-2xl font-bold">Calculadora de PH 🧻</h1>
+                            <p className="text-indigo-100 text-sm">Descubra qual pacote vale mais a pena</p>
+                        </div>
+                    </header>
+
+                    <main className="max-w-xl mx-auto p-4 space-y-6">
+                        
+                        {/* Formulário de Entrada */}
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                            <h2 className="text-lg font-semibold mb-4 text-gray-700">Novo Comparativo</h2>
+                            <form onSubmit={adicionarItem} className="space-y-4">
+                                
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Apelido (Opcional)</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Ex: Marca X Leve Mais" 
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                                        value={apelido}
+                                        onChange={(e) => setApelido(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">Rolos no pacote</label>
+                                        <input 
+                                            type="number" 
+                                            placeholder="Ex: 12" 
+                                            required
+                                            min="1"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                                            value={unidades}
+                                            onChange={(e) => setUnidades(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">Metros por rolo</label>
+                                        <input 
+                                            type="number" 
+                                            placeholder="Ex: 30" 
+                                            required
+                                            step="0.1"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                                            value={metros}
+                                            onChange={(e) => setMetros(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Preço do Pacote (R$)</label>
+                                    <input 
+                                        type="number" 
+                                        placeholder="Ex: 25.90" 
+                                        required
+                                        step="0.01"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                                        value={preco}
+                                        onChange={(e) => setPreco(e.target.value)}
+                                    />
+                                </div>
+
+                                <button 
+                                    type="submit" 
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition duration-200 shadow-md flex justify-center items-center gap-2"
+                                >
+                                    <span>Adicionar à Lista</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        {/* Controles da Lista */}
+                        {itens.length > 0 && (
+                            <div className="flex justify-between items-center bg-gray-200 p-2 rounded-lg">
+                                <span className="text-sm font-medium text-gray-600 pl-2">{itens.length} opções</span>
+                                <button 
+                                    onClick={() => setOrdemCrescente(!ordemCrescente)}
+                                    className="text-sm bg-white px-3 py-1.5 rounded shadow-sm text-indigo-600 font-medium hover:bg-gray-50 transition"
+                                >
+                                    Ordenar: {ordemCrescente ? 'Mais Barato ⬆' : 'Mais Caro ⬇'}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Lista de Resultados */}
+                        <div className="space-y-3">
+                            {itensOrdenados.map((item) => (
+                                <div 
+                                    key={item.id} 
+                                    className={`relative p-4 rounded-xl border-2 transition-all duration-300 ${
+                                        item.id === menorPrecoId 
+                                        ? 'bg-green-50 border-green-500 shadow-md transform scale-[1.02]' 
+                                        : 'bg-white border-transparent shadow-sm hover:shadow-md'
+                                    }`}
+                                >
+                                    {item.id === menorPrecoId && (
+                                        <div className="absolute -top-3 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm uppercase tracking-wider">
+                                            Melhor Custo
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-bold text-gray-800 text-lg">{item.apelido}</h3>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                {item.unidades} rolos x {item.metros}m • Total: {formatarMoeda(item.precoTotal)}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-2xl font-bold text-indigo-700">
+                                                R$ {item.precoPorMetro.toFixed(4)}
+                                            </div>
+                                            <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">
+                                                por metro
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={() => removerItem(item.id)}
+                                        className="absolute -top-2 -left-2 bg-gray-200 hover:bg-red-100 hover:text-red-600 text-gray-400 w-6 h-6 rounded-full flex items-center justify-center transition"
+                                        title="Remover"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            ))}
+                            
+                            {itens.length === 0 && (
+                                <div className="text-center py-10 text-gray-400">
+                                    <p>Adicione itens acima para comparar</p>
+                                </div>
+                            )}
+                        </div>
+
+                    </main>
+
+                    {/* Footer Solicitado */}
+                    <footer className="fixed bottom-0 left-0 right-0 bg-gray-100 border-t border-gray-300 py-2 text-[10px] sm:text-xs text-gray-600 z-50">
+                        <div className="max-w-6xl mx-auto px-2 sm:px-4 text-center">
+                            <div className="hidden sm:block truncate">
+                                Projeto livre e independente • Licença
+                                <a href="https://github.com/Delg11" target="_blank" rel="noopener noreferrer" className="underline hover:text-indigo-600 ml-1"> GNU GPL</a>
+                                {' • '}
+                                Doações via PIX: <span className="font-mono font-semibold ml-1">g.delgado@unifesp.br</span>
+                            </div>
+                            <div className="sm:hidden flex flex-col gap-0.5 text-[9px]">
+                                <p className="truncate">Projeto livre • <a href="https://github.com/Delg11" target="_blank" rel="noopener noreferrer" className="underline">GNU GPL</a></p>
+                                <p className="truncate">PIX: <span className="font-mono font-semibold break-all">g.delgado@unifesp.br</span></p>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
